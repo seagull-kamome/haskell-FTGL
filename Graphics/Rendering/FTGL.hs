@@ -1,6 +1,6 @@
-{-# INCLUDE <FTGL/ftgl.h> #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# OPTIONS_GHC -O2 -fglasgow-exts #-}
+{-# LANGUAGE EmptyDataDecls #-}
+{-# OPTIONS_GHC -O2 #-}
 -- | * Author: Jefferson Heard (jefferson.r.heard at gmail.com)
 --
 --   * Copyright 2008 Renaissance Computing Institute < http://www.renci.org > 
@@ -26,15 +26,13 @@
 module Graphics.Rendering.FTGL 
 where
 
-import Foreign (unsafePerformIO)
+import System.IO.Unsafe (unsafePerformIO)
 import Foreign.C
 import Foreign.Ptr
 import Foreign.Marshal.Alloc
 import Foreign.Marshal.Array
 import Data.Bits 
 import Data.Char (ord)
-
-import qualified Graphics.Rendering.OpenGL.GL as GL
 
 import Control.Applicative ((<$>))
 
