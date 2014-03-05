@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Control.Monad (when, unless)
-import Control.Concurrent (threadDelay)
+import Control.Monad (unless)
+--import Control.Concurrent (threadDelay)
 --import Data.ByteString.Char8
 import Graphics.Rendering.FTGL as FTGL
 import Graphics.UI.GLFW as GLFW
@@ -14,7 +14,7 @@ main = do
   GLFW.init >>= flip unless (fail "Failed to initialize GLFW")
 
   fnt <- FTGL.createExtrudeFont "examples/gothic.ttf"
-  FTGL.setFontFaceSize fnt 7 7
+  _ <- FTGL.setFontFaceSize fnt 7 7
   FTGL.setFontDepth fnt 1.0
 
   GLFW.windowHint $ GLFW.WindowHint'Resizable False
