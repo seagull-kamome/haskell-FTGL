@@ -1,10 +1,10 @@
 Name:           FTGL
 Version:        1.333
-Cabal-Version:  >= 1.2
+Cabal-Version:  >= 1.8
 License:        BSD3
 License-File:   LICENSE
-Author:         J.R. Heard
-Maintainer:     J.R. Heard
+Author:         J.R. Heard, HIROKI,HATTORI <seagull.kamome@gmail.com>
+Maintainer:     HIROKI,HATTORI <seagull.kamome@gmail.com>
 Category:       Graphics
 Description:    
   A Haskell binding for the portable TrueType to OpenGL font rendering library FTGL.
@@ -13,9 +13,17 @@ Description:
 Synopsis:       Portable TrueType font rendering for OpenGL using the Freetype2 library
 Build-Type:     Simple
 
+source-repository head
+   type: git
+   location: git@github.com:seagull-kamome/haskell-FTGL.git
+
 Library
    Build-Depends: base
    Exposed-Modules:
       Graphics.Rendering.FTGL
    extra-libraries: ftgl
 
+Executable ex1
+   Build-Depends: base, FTGL, OpenGL, GLFW-b
+   main-is:     ex1.hs
+   hs-source-dirs: examples

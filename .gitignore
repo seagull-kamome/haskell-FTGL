@@ -2,6 +2,7 @@
 .cabal-sandbox/
 dist/
 cabal.sandbox.config
-*_flymake.hs
+*_flymake.*
 *~
 *.bak
+*.ttf
