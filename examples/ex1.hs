@@ -3,7 +3,8 @@ module Main where
 
 import Control.Monad (unless)
 --import Control.Concurrent (threadDelay)
---import Data.ByteString.Char8
+import qualified Data.Text.Encoding as T
+
 import Graphics.Rendering.FTGL as FTGL
 import Graphics.UI.GLFW as GLFW
 import Graphics.Rendering.OpenGL as GL
@@ -14,6 +15,7 @@ main = do
   GLFW.init >>= flip unless (fail "Failed to initialize GLFW")
 
   fnt <- FTGL.createExtrudeFont "examples/gothic.ttf"
+  FTGL.setCharMap fnt FTGL.EncodingUnicode
   _ <- FTGL.setFontFaceSize fnt 7 7
   FTGL.setFontDepth fnt 1.0
 
@@ -30,13 +32,13 @@ main = do
         
         GL.scale 0.01 0.01 (0.5 :: GLdouble)
         GL.color $ Color4 1.0 0 0 (1.0 :: GLdouble)
-        FTGL.renderFont fnt "Hello, 日本語はすける" FTGL.All
+        FTGL.renderFont fnt (T.encodeUtf8 "Hello, 日本語はすける") FTGL.All
 
         GL.translate $ Vector3 0.0 7.0 (0.0 :: GLdouble)
         FTGL.renderFont fnt "GLFW+FTGL" FTGL.All
 
         GL.translate $ Vector3 (-100) 7.0 (0.0 :: GLdouble)
-        FTGL.renderFont fnt "文字列の左下が原点で、上はY+。横はX+方向。Z=0平面に描かれる？" FTGL.All
+        FTGL.renderFont fnt (T.encodeUtf8 "文字列の左下が原点で、上はY+。横はX+方向。Z=0平面に描かれる？") FTGL.All
 
         GLFW.swapBuffers win
         --threadDelay 200
