@@ -18,12 +18,12 @@ source-repository head
    location: git@github.com:seagull-kamome/haskell-FTGL.git
 
 Library
-   Build-Depends: base
+   Build-Depends: base >= 4.6 && <4.7
    Exposed-Modules:
       Graphics.Rendering.FTGL
    extra-libraries: ftgl
 
 Executable ex1
-   Build-Depends: base, FTGL, OpenGL, GLFW-b
+   Build-Depends: base >= 4.6 && <4.7, FTGL, OpenGL, GLFW-b
    main-is:     ex1.hs
    hs-source-dirs: examples
