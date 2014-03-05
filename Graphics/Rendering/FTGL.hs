@@ -1,6 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE EmptyDataDecls #-}
-{-# OPTIONS_GHC -O2 #-}
 -- | * Author: Jefferson Heard (jefferson.r.heard at gmail.com)
 --
 --   * Copyright 2008 Renaissance Computing Institute < http://www.renci.org > 
@@ -33,218 +32,284 @@ import Foreign.Marshal.Alloc
 import Foreign.Marshal.Array
 import Data.Bits 
 import Data.Char (ord)
+import qualified Data.ByteString.Char8 as BS8
 
 import Control.Applicative ((<$>))
 
 foreign import ccall unsafe "ftglCreateBitmapFont" fcreateBitmapFont :: CString -> IO Font
+{-# INLINE fcreateBitmapFont #-}
+
 -- | Create a bitmapped version of a TrueType font.  Bitmapped versions will not
 -- | respond to matrix transformations, but rather must be transformed using the
 -- | raster positioning functions in OpenGL
-createBitmapFont :: String -> IO Font
-createBitmapFont file = withCString file $ \p -> fcreateBitmapFont p
-
+createBitmapFont :: BS8.ByteString -> IO Font
+createBitmapFont = flip BS8.useAsCString fcreateBitmapFont
+{-# INLINE createBitmapFont #-}
 
 foreign import ccall unsafe "ftglCreateBufferFont" fcreateBufferFont :: CString -> IO Font
+{-# INLINE fcreateBufferFont #-}
+
 -- | Create a buffered version of a TrueType font. This stores the entirety of
 -- | a string in a texture, "buffering" it before rendering.  Very fast if you
 -- | will be repeatedly rendering the same strings over and over.
-createBufferFont :: String -> IO Font
-createBufferFont file = withCString file $ \p -> fcreateBufferFont p
-
+createBufferFont :: BS8.ByteString -> IO Font
+createBufferFont = flip BS8.useAsCString fcreateBufferFont
+{-# INLINE createBufferFont #-}
 
 foreign import ccall unsafe "ftglCreateOutlineFont" fcreateOutlineFont :: CString -> IO Font
+{-# INLINE fcreateOutlineFont #-}
+
 -- | Create an outline version of a TrueType font. This uses actual geometry
 -- | and will scale independently without loss of quality.  Faster than polygons
 -- | but slower than texture or buffer fonts.
-createOutlineFont :: String -> IO Font
-createOutlineFont file = withCString file $ \p -> fcreateOutlineFont p
-
+createOutlineFont :: BS8.ByteString -> IO Font
+createOutlineFont = flip BS8.useAsCString fcreateOutlineFont
+{-# INLINE createOutlineFont #-}
 
 foreign import ccall unsafe "ftglCreatePixmapFont" fcreatePixmapFont  :: CString -> IO Font
+{-# INLINE fcreatePixmapFont #-}
+
 -- | Create a pixmap version of a TrueType font.  Higher quality than the bitmap
 -- | font without losing any performance.  Use this if you don't mind using
 -- | set and get RasterPosition.
-createPixmapFont :: String -> IO Font
-createPixmapFont file = withCString file $ \p -> fcreatePixmapFont p
-
+createPixmapFont :: BS8.ByteString -> IO Font
+createPixmapFont = flip BS8.useAsCString fcreatePixmapFont
+{-# INLINE createPixmapFont #-}
 
 foreign import ccall unsafe "ftglCreatePolygonFont" fcreatePolygonFont :: CString -> IO Font
+{-# INLINE fcreatePolygonFont #-}
+
 -- | Create polygonal display list fonts.  These scale independently without
 -- | losing quality, unlike texture or buffer fonts, but can be impractical
 -- | for large amounts of text because of the high number of polygons needed.
 -- | Additionally, they do not, unlike the textured fonts, create artifacts
 -- | within the square formed at the edge of each character.
-createPolygonFont :: String -> IO Font
-createPolygonFont file = withCString file $ \p -> fcreatePolygonFont p
-
+createPolygonFont :: BS8.ByteString -> IO Font
+createPolygonFont = flip BS8.useAsCString fcreatePolygonFont
+{-# INLINE createPolygonFont #-}
 
 foreign import ccall unsafe "ftglCreateTextureFont" fcreateTextureFont :: CString -> IO Font
+{-# INLINE fcreateTextureFont #-}
+
 -- | Create textured display list fonts.  These can scale somewhat well, 
 -- | but lose quality quickly.  They are much faster than polygonal fonts, 
 -- | though, so are suitable for large quantities of text.  Especially suited
 -- | well to text that changes with most frames, because it doesn't incur the
 -- | (normally helpful) overhead of buffering.
-createTextureFont :: String -> IO Font
-createTextureFont file = withCString file $ \p -> fcreateTextureFont p
-
+createTextureFont :: BS8.ByteString -> IO Font
+createTextureFont = flip BS8.useAsCString fcreateTextureFont
+{-# INLINE createTextureFont #-}
 
 foreign import ccall unsafe "ftglCreateExtrudeFont" fcreateExtrudeFont :: CString -> IO Font
+{-# INLINE fcreateExtrudeFont #-}
+
 -- | Create a 3D extruded font.  This is the only way of creating 3D fonts 
 -- | within FTGL.  Could be fun to use a geometry shader to get different
 -- | effects by warping the otherwise square nature of the font.  Polygonal.
 -- | Scales without losing quality.  Slower than all other fonts.
-createExtrudeFont :: String -> IO Font
-createExtrudeFont file = withCString file $ \p -> fcreateExtrudeFont p
-
+createExtrudeFont :: BS8.ByteString -> IO Font
+createExtrudeFont = flip BS8.useAsCString fcreateExtrudeFont
+{-# INLINE createExtrudeFont #-}
 
 
 
 -- | Create a simple layout
 foreign import ccall unsafe "ftglCreateSimpleLayout" createSimpleLayout :: IO Layout
+{-# INLINE createSimpleLayout #-}
 
 -- | Set the layout's font.
 foreign import ccall unsafe "ftglSetLayoutFont" setLayoutFont :: Layout -> Font -> IO ()
+{-# INLINE setLayoutFont #-}
 
 
-foreign import ccall unsafe "ftglGetLayoutFont" fgetLayoutFont :: Layout -> IO Font
 -- | Get the embedded font from the Layout
-getLayoutFont f = fgetLayoutFont f 
-
+foreign import ccall unsafe "ftglGetLayoutFont" getLayoutFont :: Layout -> IO Font
+{-# INLINE getLayoutFont #-}
 
 -- | Set the line length, I believe in OpenGL units, although I'm not sure.
 foreign import ccall unsafe "ftglSetLayoutLineLength" setLayoutLineLength :: Layout -> CFloat -> IO ()
-
+{-# INLINE setLayoutLineLength #-}
 
 foreign import ccall unsafe "ftglGetLayoutLineLength" fgetLayoutLineLength :: Layout -> IO CFloat
+{-# INLINE fgetLayoutLineLength #-}
+
 -- | Get the line length in points (1:72in) of lines in the layout
 getLayoutLineLength :: Layout -> IO Float
 getLayoutLineLength f = realToFrac <$> fgetLayoutLineLength f
-
+{-# INLINE getLayoutLineLength #-}
 
 foreign import ccall unsafe "ftglSetLayoutAlignment" fsetLayoutAlignment :: Layout -> CInt -> IO ()
--- | Set the layout alignment
-setLayoutAlignment layout alignment = fsetLayoutAlignment layout (marshalTextAlignment alignment)
+{-# INLINE fsetLayoutAlignment #-}
 
+-- | Set the layout alignment
+setLayoutAlignment :: Layout -> TextAlignment -> IO ()
+setLayoutAlignment layout alignment = fsetLayoutAlignment layout (fromIntegral $ fromEnum alignment)
+{-# INLINE setLayoutAlignment #-}
 
 foreign import ccall unsafe "ftglGetLayoutAlignement" fgetLayoutAlignment :: Layout -> IO CInt
--- | Get the alignment of text in this layout.
-getLayoutAlignment f = readTextAlignment <$>  fgetLayoutAlignment f
+{-# INLINE fgetLayoutAlignment #-}
 
+-- | Get the alignment of text in this layout.
+getLayoutAlignment :: Layout -> IO TextAlignment
+getLayoutAlignment f = toEnum . fromIntegral <$>  fgetLayoutAlignment f
+{-# INLINE getLayoutAlignment #-}
 
 foreign import ccall unsafe "ftglSetLayoutLineSpacing" fsetLayoutLineSpacing :: Layout -> CFloat -> IO ()
+{-# INLINE fsetLayoutLineSpacing #-}
+
 -- | Set layout line spacing in OpenGL units.
 setLayoutLineSpacing :: Layout -> Float -> IO ()
 setLayoutLineSpacing layout spacing = setLayoutLineSpacing layout (realToFrac spacing)
-
+{-# INLINE setLayoutLineSpacing #-}
 
 -- | Destroy a font
 foreign import ccall unsafe "ftglDestroyFont" destroyFont :: Font -> IO ()
-
+{-# INLINE destroyFont #-}
 
 foreign import ccall unsafe "ftglAttachFile" fattachFile  :: Font -> CString -> IO ()
--- | Attach a metadata file to a font.
-attachFile :: Font -> String -> IO () 
-attachFile font str = withCString str $ \p -> fattachFile font p
+{-# INLINE fattachFile #-}
 
+-- | Attach a metadata file to a font.
+attachFile :: Font -> BS8.ByteString -> IO () 
+attachFile font str = BS8.useAsCString str $ fattachFile font
+{-# INLINE attachFile #-}
 
 -- | Attach some external data (often kerning) to the font
 foreign import ccall unsafe "ftglAttachData" attachData :: Font -> Ptr () -> IO () 
-
+{-# INLINE attachData #-}
 
 -- | Set the font's character map
 foreign import ccall unsafe "ftglSetFontCharMap" fsetFontCharMap :: Font -> CInt -> IO ()
+{-# INLINE fsetFontCharMap #-}
+
 setCharMap :: Font -> CharMap -> IO ()
 setCharMap font charmap = fsetFontCharMap font (marshalCharMap charmap) 
-
+{-# INLINE setCharMap #-}
 
 foreign import ccall unsafe "ftglGetFontCharMapCount" fgetFontCharMapCount :: Font -> IO CInt
+{-# INLINE fgetFontCharMapCount #-}
+
 -- | Get the number of characters loaded into the current charmap for the font.
 getFontCharMapCount :: Font -> Int
 getFontCharMapCount f = fromIntegral . unsafePerformIO $ fgetFontCharMapCount f
-
+{-# INLINE getFontCharMapCount #-}
 
 foreign import ccall unsafe "ftglGetFontCharMapList" fgetFontCharMapList  :: Font -> IO (Ptr CInt)
--- | Get the different character mappings available in this font.
-getFontCharMapList f = unsafePerformIO $ fgetFontCharMapList f
+{-# INLINE fgetFontCharMapList #-}
 
+-- | Get the different character mappings available in this font.
+getFontCharMapList :: Font -> Ptr CInt
+getFontCharMapList f = unsafePerformIO $ fgetFontCharMapList f
+{-# INLINE getFontCharMapList #-}
 
 foreign import ccall unsafe "ftglSetFontFaceSize" fsetFontFaceSize  :: Font -> CInt -> CInt -> IO CInt
+{-# INLINE fsetFontFaceSize #-}
+
 setFontFaceSize :: Font -> Int -> Int -> IO CInt
 setFontFaceSize f s x = fsetFontFaceSize f (fromIntegral s) (fromIntegral x)
+{-# INLINE setFontFaceSize #-}
 
 foreign import ccall unsafe "ftglGetFontFaceSize" fgetFontFaceSize :: Font -> IO CInt
+{-# INLINE fgetFontFaceSize #-}
+
 -- | Get the current font face size in points.
 getFontFaceSize :: Font -> IO Int
 getFontFaceSize f = fromIntegral <$> fgetFontFaceSize f
-
+{-# INLINE getFontFaceSize #-}
 
 foreign import ccall unsafe "ftglSetFontDepth" fsetFontDepth :: Font -> CFloat -> IO ()
+{-# INLINE fsetFontDepth #-}
+
 setFontDepth :: Font -> Float -> IO ()
 setFontDepth font depth = fsetFontDepth font (realToFrac depth)
-
+{-# INLINE setFontDepth #-}
 
 foreign import ccall unsafe "ftglSetFontOutset" fsetFontOutset :: Font -> CFloat -> CFloat -> IO ()
+{-# INLINE fsetFontOutset #-}
+
 setFontOutset :: Font -> Float -> Float -> IO ()
 setFontOutset font d o = fsetFontOutset font (realToFrac d) (realToFrac o)
+{-# INLINE setFontOutset #-}
 
+foreign import ccall unsafe "ftglGetFontBBox" fgetFontBBox :: Font -> CString -> Int -> Ptr CFloat -> IO ()
+{-# INLINE fgetFontBBox #-}
 
-foreign import ccall unsafe "ftglGetFontBBox" fgetFontBBox :: Font -> CString -> Int -> Ptr CFloat -> IO () 
 -- | Get the text extents of a string as a list of (llx,lly,lly,urx,ury,urz)
-getFontBBox :: Font -> String -> IO [Float]
-getFontBBox f s = allocaBytes 24 $ \pf -> 
-                     withCString s $ \ps -> do 
-                       fgetFontBBox f ps (-1) pf
-                       map realToFrac <$> peekArray 6 pf
+getFontBBox :: Font -> BS8.ByteString -> IO [Float]
+getFontBBox f s = allocaBytes 24 $ \pf -> do
+                     BS8.useAsCString s $ \ps -> fgetFontBBox f ps (-1) pf
+                     map realToFrac <$> peekArray 6 pf
+{-# INLINE getFontBBox #-}
 
 foreign import ccall unsafe "ftglGetFontAscender" fgetFontAscender :: Font -> CFloat
+{-# INLINE fgetFontAscender #-}
+
 -- | Get the global ascender height for the face. 
 getFontAscender :: Font -> Float
 getFontAscender  = realToFrac . fgetFontAscender 
+{-# INLINE getFontAscender #-}
 
 foreign import ccall unsafe "ftglGetFontDescender" fgetFontDescender :: Font -> CFloat
+{-# INLINE fgetFontDescender #-}
+
 -- | Gets the global descender height for the face. 
 getFontDescender :: Font -> Float
 getFontDescender  = realToFrac . fgetFontDescender 
-
+{-# INLINE getFontDescender #-}
 
 foreign import ccall unsafe "ftglGetFontLineHeight" fgetFontLineHeight :: Font -> CFloat
+{-# INLINE fgetFontLineHeight #-}
+
 -- | Gets the global line spacing for the face. 
 getFontLineHeight :: Font -> Float
 getFontLineHeight  = realToFrac . fgetFontLineHeight
+{-# INLINE getFontLineHeight #-}
 
 foreign import ccall unsafe "ftglGetFontAdvance" fgetFontAdvance :: Font -> CString -> IO CFloat
+{-# INLINE fgetFontAdvance #-}
+
 -- | Get the horizontal span of a string of text using the current font.  Input as the xcoord
 -- | in any translate operation
-getFontAdvance :: Font -> String -> IO Float
-getFontAdvance font str = realToFrac <$> (withCString str $ \p -> fgetFontAdvance font p )
-
+getFontAdvance :: Font -> BS8.ByteString -> IO Float
+getFontAdvance font str = realToFrac <$> (BS8.useAsCString str $ fgetFontAdvance font)
+{-# INLINE getFontAdvance #-}
 
 foreign import ccall unsafe "ftglRenderFont" frenderFont :: Font -> CString -> CInt -> IO ()
--- | Render a string of text in the current font.
-renderFont :: Font -> String -> RenderMode -> IO ()
-renderFont font str mode = withCString str $ \p -> do 
-	frenderFont font p (marshalRenderMode mode)
+{-# INLINE frenderFont #-}
 
+-- | Render a string of text in the current font.
+renderFont :: Font -> BS8.ByteString -> RenderMode -> IO ()
+renderFont font str mode = BS8.useAsCString str $ \p -> frenderFont font p (fromIntegral $ fromEnum mode)
+{-# INLINE renderFont #-}
 
 foreign import ccall unsafe "ftglGetFontError" fgetFontError :: Font -> IO CInt
+{-# INLINE fgetFontError #-}
+
 -- | Get any errors associated with loading a font. FIXME return should be a type, not an Int.
 getFontError :: Font -> IO Int
 getFontError f = fromIntegral <$> fgetFontError f
-
+{-# INLINE getFontError #-}
 
 
 
 foreign import ccall unsafe "ftglDestroyLayout" destroyLayout :: Layout -> IO ()
-
+{-# INLINE destroyLayout #-}
 
 foreign import ccall unsafe "ftglRenderLayout" frenderLayout :: Layout -> CString -> IO ()
--- | Render a string of text within a layout.
-renderLayout layout str = withCString str $ \strPtr -> do frenderLayout layout strPtr
+{-# INLINE frenderLayout #-}
 
+-- | Render a string of text within a layout.
+renderLayout :: Layout -> BS8.ByteString -> IO ()
+renderLayout layout str = BS8.useAsCString str $ frenderLayout layout
+{-# INLINE renderLayout #-}
 
 foreign import ccall unsafe "ftglGetLayoutError" fgetLayoutError :: Layout -> IO CInt
+{-# INLINE fgetLayoutError #-}
+
 -- | Get any errors associated with a layout.
+getLayoutError :: Layout -> IO CInt
 getLayoutError f = fgetLayoutError f
+{-# INLINE getLayoutError #-}
 
 
 
@@ -252,28 +317,23 @@ getLayoutError f = fgetLayoutError f
 
 
 -- | Whether or not in polygonal or extrusion mode, the font will render equally front and back
-data RenderMode = Front | Back | Side | All
+data RenderMode = Front | Back | Side | All deriving (Show, Eq)
+instance Enum RenderMode where
+  fromEnum Front = 0x0001
+  fromEnum Back = 0x0002
+  fromEnum Side = 0x0004
+  fromEnum All = 0xffff
+  {-# INLINE fromEnum #-}
+  toEnum 0x0001 = Front
+  toEnum 0x0002 = Back
+  toEnum 0x0004 = Side
+  toEnum 0xffff = All
+  toEnum x = error $ "Unknown RenderMode as " ++ show x
+  {-# INLINE toEnum #-}
 
 -- | In a Layout directed render, the layout mode of the text
 data TextAlignment = AlignLeft | AlignCenter | AlignRight | Justify
-
-marshalRenderMode :: RenderMode -> CInt
-marshalRenderMode Front = 0x0001
-marshalRenderMode Back = 0x0002
-marshalRenderMode Side = 0x004
-marshalRenderMode All = 0xffff
-
-marshalTextAlignment :: TextAlignment -> CInt
-marshalTextAlignment AlignLeft = 0
-marshalTextAlignment AlignCenter = 1
-marshalTextAlignment AlignRight = 2 
-marshalTextAlignment Justify = 3
-
-readTextAlignment :: CInt -> TextAlignment
-readTextAlignment 0 = AlignLeft
-readTextAlignment 1 = AlignCenter
-readTextAlignment 2 = AlignRight
-readTextAlignment 3 = Justify
+                   deriving (Show, Eq, Enum)
 
 -- | An opaque type encapsulating a glyph in C.  Currently the glyph functions are unimplemented in Haskell.
 data Glyph_Opaque 
@@ -312,6 +372,7 @@ encodeTag a b c d =
     .|. (fromIntegral (ord c) `shift` 8) 
     .|. (fromIntegral (ord d))
 
+marshalCharMap :: CharMap -> CInt
 marshalCharMap EncodingNone = 0
 marshalCharMap EncodingMSSymbol = encodeTag 's' 'y' 'm' 'b'
 marshalCharMap EncodingUnicode =encodeTag 'u' 'n' 'i' 'c'
