@@ -1,6 +1,6 @@
 Name:           FTGL
 Version:        1.333
-Cabal-Version:  >= 1.8
+Cabal-Version:  >= 1.10
 License:        BSD3
 License-File:   LICENSE
 Author:         J.R. Heard, HIROKI,HATTORI <seagull.kamome@gmail.com>
@@ -18,12 +18,15 @@ source-repository head
    location: git@github.com:seagull-kamome/haskell-FTGL.git
 
 Library
-   Build-Depends: base >= 4.6 && <4.7
-   Exposed-Modules:
-      Graphics.Rendering.FTGL
+   Build-Depends: base >= 3 && < 5, bytestring >= 0.10
+   Exposed-Modules: Graphics.Rendering.FTGL
    extra-libraries: ftgl
+   ghc-options: -Wall -O2
+   default-language: Haskell2010
 
 Executable ex1
-   Build-Depends: base >= 4.6 && <4.7, FTGL, OpenGL, GLFW-b
+   Build-Depends: base >= 3 && <5, FTGL, OpenGL, GLFW-b
    main-is:     ex1.hs
    hs-source-dirs: examples
+   ghc-options: -Wall -O2
+   default-language: Haskell2010
