@@ -18,7 +18,10 @@ source-repository head
    location: git@github.com:seagull-kamome/haskell-FTGL.git
 
 Library
-   Build-Depends: base >= 3 && < 5, bytestring >= 0.10
+   Build-Depends: base >= 3 && < 5,
+                  bytestring >= 0.10,
+                  transformers >= 0.3,
+                  StateVar-transformer >= 1.0.0
    Exposed-Modules: Graphics.Rendering.FTGL
    extra-libraries: ftgl
    ghc-options: -Wall

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE EmptyDataDecls #-}
 -- | * Author: Jefferson Heard (jefferson.r.heard at gmail.com)
@@ -25,6 +26,7 @@
 module Graphics.Rendering.FTGL 
 where
 
+import Control.Monad.IO.Class
 import System.IO.Unsafe (unsafePerformIO)
 import Foreign.C
 import Foreign.Ptr
@@ -33,6 +35,7 @@ import Foreign.Marshal.Array
 import Data.Bits 
 import Data.Char (ord)
 import qualified Data.ByteString.Char8 as BS8
+import Data.StateVar.Trans
 
 import Control.Applicative ((<$>))
 
@@ -121,10 +124,13 @@ foreign import ccall unsafe "ftglCreateSimpleLayout" createSimpleLayout :: IO La
 foreign import ccall unsafe "ftglSetLayoutFont" setLayoutFont :: Layout -> Font -> IO ()
 {-# INLINE setLayoutFont #-}
 
-
 -- | Get the embedded font from the Layout
 foreign import ccall unsafe "ftglGetLayoutFont" getLayoutFont :: Layout -> IO Font
 {-# INLINE getLayoutFont #-}
+
+layoutFont :: MonadIO m => Layout -> StateVar m Font
+layoutFont l = makeStateVar (liftIO $ getLayoutFont l) (liftIO . setLayoutFont l)
+{-# INLINE layoutFont #-}
 
 -- | Set the line length, I believe in OpenGL units, although I'm not sure.
 foreign import ccall unsafe "ftglSetLayoutLineLength" setLayoutLineLength :: Layout -> CFloat -> IO ()
@@ -133,34 +139,32 @@ foreign import ccall unsafe "ftglSetLayoutLineLength" setLayoutLineLength :: Lay
 foreign import ccall unsafe "ftglGetLayoutLineLength" fgetLayoutLineLength :: Layout -> IO CFloat
 {-# INLINE fgetLayoutLineLength #-}
 
--- | Get the line length in points (1:72in) of lines in the layout
-getLayoutLineLength :: Layout -> IO Float
-getLayoutLineLength f = realToFrac <$> fgetLayoutLineLength f
-{-# INLINE getLayoutLineLength #-}
+layoutLineLength :: MonadIO m => Layout -> StateVar m CFloat
+layoutLineLength l = makeStateVar
+                       (liftIO $ realToFrac <$> fgetLayoutLineLength l)
+                       (liftIO . setLayoutLineLength l)
+{-# INLINE layoutLineLength #-}
+
 
 foreign import ccall unsafe "ftglSetLayoutAlignment" fsetLayoutAlignment :: Layout -> CInt -> IO ()
 {-# INLINE fsetLayoutAlignment #-}
-
--- | Set the layout alignment
-setLayoutAlignment :: Layout -> TextAlignment -> IO ()
-setLayoutAlignment layout alignment = fsetLayoutAlignment layout (fromIntegral $ fromEnum alignment)
-{-# INLINE setLayoutAlignment #-}
-
 foreign import ccall unsafe "ftglGetLayoutAlignement" fgetLayoutAlignment :: Layout -> IO CInt
 {-# INLINE fgetLayoutAlignment #-}
 
--- | Get the alignment of text in this layout.
-getLayoutAlignment :: Layout -> IO TextAlignment
-getLayoutAlignment f = toEnum . fromIntegral <$>  fgetLayoutAlignment f
-{-# INLINE getLayoutAlignment #-}
+layoutAlignment :: MonadIO m => Layout -> StateVar m TextAlignment
+layoutAlignment l = makeStateVar
+                      (liftIO $ toEnum . fromIntegral <$>  fgetLayoutAlignment l)
+                      (liftIO . fsetLayoutAlignment l . fromIntegral . fromEnum)
+{-# INLINE layoutAlignment #-}
+
+
 
 foreign import ccall unsafe "ftglSetLayoutLineSpacing" fsetLayoutLineSpacing :: Layout -> CFloat -> IO ()
 {-# INLINE fsetLayoutLineSpacing #-}
 
--- | Set layout line spacing in OpenGL units.
-setLayoutLineSpacing :: Layout -> Float -> IO ()
-setLayoutLineSpacing layout spacing = setLayoutLineSpacing layout (realToFrac spacing)
-{-# INLINE setLayoutLineSpacing #-}
+layoutLineSpacing :: MonadIO m => Layout -> SettableStateVar m Float
+layoutLineSpacing l = makeSettableStateVar $ liftIO . fsetLayoutLineSpacing l . realToFrac
+{-# INLINE layoutLineSpacing #-}
 
 -- | Destroy a font
 foreign import ccall unsafe "ftglDestroyFont" destroyFont :: Font -> IO ()
@@ -182,9 +186,9 @@ foreign import ccall unsafe "ftglAttachData" attachData :: Font -> Ptr () -> IO 
 foreign import ccall unsafe "ftglSetFontCharMap" fsetFontCharMap :: Font -> CInt -> IO ()
 {-# INLINE fsetFontCharMap #-}
 
-setCharMap :: Font -> CharMap -> IO ()
-setCharMap font charmap = fsetFontCharMap font (marshalCharMap charmap) 
-{-# INLINE setCharMap #-}
+charMap :: MonadIO m => Font -> SettableStateVar m CharMap
+charMap font = makeSettableStateVar $ \charmap -> liftIO $ fsetFontCharMap font (marshalCharMap charmap)
+{-# INLINE charMap #-}
 
 foreign import ccall unsafe "ftglGetFontCharMapCount" fgetFontCharMapCount :: Font -> IO CInt
 {-# INLINE fgetFontCharMapCount #-}
@@ -213,16 +217,16 @@ foreign import ccall unsafe "ftglGetFontFaceSize" fgetFontFaceSize :: Font -> IO
 {-# INLINE fgetFontFaceSize #-}
 
 -- | Get the current font face size in points.
-getFontFaceSize :: Font -> IO Int
-getFontFaceSize f = fromIntegral <$> fgetFontFaceSize f
-{-# INLINE getFontFaceSize #-}
+fontFaceSize :: MonadIO m => Font -> GettableStateVar m Int
+fontFaceSize f = makeGettableStateVar $ liftIO $ fromIntegral <$> fgetFontFaceSize f
+{-# INLINE fontFaceSize #-}
 
 foreign import ccall unsafe "ftglSetFontDepth" fsetFontDepth :: Font -> CFloat -> IO ()
 {-# INLINE fsetFontDepth #-}
 
-setFontDepth :: Font -> Float -> IO ()
-setFontDepth font depth = fsetFontDepth font (realToFrac depth)
-{-# INLINE setFontDepth #-}
+fontDepth :: MonadIO m => Font -> SettableStateVar m Float
+fontDepth font = makeSettableStateVar $ \depth -> liftIO $ fsetFontDepth font (realToFrac depth)
+{-# INLINE fontDepth #-}
 
 foreign import ccall unsafe "ftglSetFontOutset" fsetFontOutset :: Font -> CFloat -> CFloat -> IO ()
 {-# INLINE fsetFontOutset #-}
@@ -278,17 +282,17 @@ foreign import ccall unsafe "ftglRenderFont" frenderFont :: Font -> CString -> C
 {-# INLINE frenderFont #-}
 
 -- | Render a string of text in the current font.
-renderFont :: Font -> BS8.ByteString -> RenderMode -> IO ()
-renderFont font str mode = BS8.useAsCString str $ \p -> frenderFont font p (fromIntegral $ fromEnum mode)
+renderFont :: Font -> RenderMode -> BS8.ByteString -> IO ()
+renderFont font mode str = BS8.useAsCString str $ \p -> frenderFont font p (fromIntegral $ fromEnum mode)
 {-# INLINE renderFont #-}
 
 foreign import ccall unsafe "ftglGetFontError" fgetFontError :: Font -> IO CInt
 {-# INLINE fgetFontError #-}
 
 -- | Get any errors associated with loading a font. FIXME return should be a type, not an Int.
-getFontError :: Font -> IO Int
-getFontError f = fromIntegral <$> fgetFontError f
-{-# INLINE getFontError #-}
+fontError :: MonadIO m => Font -> GettableStateVar m Int
+fontError f = makeGettableStateVar $ liftIO $ fromIntegral <$> fgetFontError f
+{-# INLINE fontError #-}
 
 
 
@@ -307,9 +311,9 @@ foreign import ccall unsafe "ftglGetLayoutError" fgetLayoutError :: Layout -> IO
 {-# INLINE fgetLayoutError #-}
 
 -- | Get any errors associated with a layout.
-getLayoutError :: Layout -> IO CInt
-getLayoutError f = fgetLayoutError f
-{-# INLINE getLayoutError #-}
+layoutError :: MonadIO m => Layout -> GettableStateVar m CInt
+layoutError f = makeGettableStateVar $ liftIO $ fgetLayoutError f
+{-# INLINE layoutError #-}
 
 
 
